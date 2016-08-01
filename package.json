@@ -1,0 +1,36 @@
+{
+  "name": "uappexplorer-cli",
+  "version": "0.0.1",
+  "description": "A command line interface for browsing apps and snaps on uApp Explorer (uappexplorer.com).",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bhdouglass/uappexplorer-cli.git"
+  },
+  "bin": {
+    "uappexplorer": "bin/uappexplorer"
+  },
+  "keywords": [
+    "uappexplorer",
+    "click",
+    "snap",
+    "uapp",
+    "ubuntu",
+    "ubuntu",
+    "touch",
+    "ubuntu",
+    "phone"
+  ],
+  "author": "Brian Douglass",
+  "license": "GPL-3.0",
+  "bugs": {
+    "url": "https://github.com/bhdouglass/uappexplorer-cli/issues"
+  },
+  "homepage": "https://github.com/bhdouglass/uappexplorer-cli#readme",
+  "dependencies": {
+    "axios": "^0.13.1",
+    "cli-table2": "^0.2.0",
+    "colors": "^1.1.2",
+    "minimist": "^1.2.0"
+  }
+}
