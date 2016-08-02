@@ -6,6 +6,7 @@ var Table = require('cli-table2');
 
 var Api = require('../api');
 var sorts = require('../constants/sorts');
+var types = require('../constants/types');
 
 var api = new Api();
 
@@ -15,6 +16,7 @@ var argv = parseArgs(process.argv.slice(2), {
         page: 1,
         size: api.DEFAULT_LIMIT,
         //sort: api.DEFAULT_SORT, //Don't set this here so we can detect when it's left undefined
+        type: api.DEFAULT_TYPE,
     },
     alias: {
         search: 's',
@@ -24,7 +26,7 @@ var argv = parseArgs(process.argv.slice(2), {
 });
 
 //TODO move to another file
-var types = {
+var colors = {
     application: colors.blue('App'),
     scope: colors.yellow('Scope'),
     webapp: colors.cyan('Web App'),
@@ -39,12 +41,14 @@ var types = {
 
 var width = process.stdout.columns - 20 - 15 - 6 - 6 - 6; //last 6 is column separators
 var table = new Table({
-    head: ['App', 'Description', 'Types', '❤', '★'],
+    head: ['App', 'Description', 'Type', '❤', '★'],
     colWidths: [20, width, 15, 6, 6],
 });
 
 var skip = (argv.page - 1) * argv.size;
 var sort = api.DEFAULT_SORT;
+var type = api.DEFAULT_TYPE;
+
 if (!argv.search) {
     //If no search default to sort by newest, like the website
     sort = 'published_date';
@@ -67,7 +71,15 @@ if (sort != 'relevance') {
     }
 }
 
-api.search(argv.search, skip, argv.size, sort).then(function(res) {
+if (types.types.indexOf(argv.type) > -1) {
+    type = argv.type;
+}
+else if (types.alias[argv.type]) {
+    type = types.alias[argv.type];
+}
+
+var query = {types: type};
+api.search(argv.search, skip, argv.size, sort, true, query).then(function(res) {
     if (res.data && res.data.data && res.data.data.apps) {
         res.data.data.apps.forEach(function(app) {
             var typeList = '';
@@ -76,7 +88,7 @@ api.search(argv.search, skip, argv.size, sort).then(function(res) {
                     typeList += ', ';
                 }
 
-                typeList += types[type];
+                typeList += colors[type];
             });
 
             table.push([
@@ -99,5 +111,6 @@ api.search(argv.search, skip, argv.size, sort).then(function(res) {
         console.log('No apps found');
     }
 }).catch(function(err) {
-    console.log('Error fetching app list: ' + err.response ? err.response.status : err);
+    var message = err.response ? err.response.status : err;
+    console.log('Error fetching app list: ' + message);
 });
