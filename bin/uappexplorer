@@ -1,3 +1,103 @@
 #!/usr/bin/env node
 
-var uappexplorer = require('../index.js');
+var parseArgs = require('minimist');
+var colors = require('colors');
+var Table = require('cli-table2');
+
+var Api = require('../api');
+var sorts = require('../constants/sorts');
+
+var api = new Api();
+
+var argv = parseArgs(process.argv.slice(2), {
+    string: ['search'],
+    default: {
+        page: 1,
+        size: api.DEFAULT_LIMIT,
+        //sort: api.DEFAULT_SORT, //Don't set this here so we can detect when it's left undefined
+    },
+    alias: {
+        search: 's',
+        page: 'p',
+        size: 'limit',
+    }
+});
+
+//TODO move to another file
+var types = {
+    application: colors.blue('App'),
+    scope: colors.yellow('Scope'),
+    webapp: colors.cyan('Web App'),
+    snappy: colors.magenta('Snap'),
+    snappy_oem: colors.magenta('OEM Snap'),
+    snappy_os: colors.magenta('OS Snap'),
+    snappy_kernel: colors.magenta('Kernel Snap'),
+    snappy_gadget: colors.magenta('Gadget Snap'),
+    snappy_framework: colors.magenta('Framework Snap'),
+    snappy_application: colors.magenta('Snap'),
+};
+
+var width = process.stdout.columns - 20 - 15 - 6 - 6 - 6; //last 6 is column separators
+var table = new Table({
+    head: ['App', 'Description', 'Types', '❤', '★'],
+    colWidths: [20, width, 15, 6, 6],
+});
+
+var skip = (argv.page - 1) * argv.size;
+var sort = api.DEFAULT_SORT;
+if (!argv.search) {
+    //If no search default to sort by newest, like the website
+    sort = 'published_date';
+}
+
+if (sorts.sorts.indexOf(argv.sort) > -1) {
+    sort = argv.sort;
+}
+else if (sorts.alias[argv.sort]) {
+    sort = sorts.alias[argv.sort];
+}
+
+//Reverse the sort, as it would be expeted that a - means sort from top to bottom
+if (sort != 'relevance') {
+    if (sort.substring(0, 1) == '-') {
+        sort = sort.substring(1);
+    }
+    else {
+        sort = '-' + sort;
+    }
+}
+
+api.search(argv.search, skip, argv.size, sort).then(function(res) {
+    if (res.data && res.data.data && res.data.data.apps) {
+        res.data.data.apps.forEach(function(app) {
+            var typeList = '';
+            app.types.forEach(function(type, index) {
+                if (index > 0) {
+                    typeList += ', ';
+                }
+
+                typeList += types[type];
+            });
+
+            table.push([
+                app.title,
+                app.short_description,
+                typeList,
+                app.points ? app.points : 0,
+                app.bayesian_average ? app.bayesian_average.toFixed(2) : 0,
+            ]);
+        });
+
+        console.log(table.toString());
+
+        if (argv.size < res.data.data.count) {
+            var pages = Math.ceil(res.data.data.count / argv.size);
+            console.log('Page ' + argv.page + ' of ' + pages);
+        }
+    }
+    else {
+        console.log('No apps found');
+    }
+}).catch(function(err) {
+    console.log('Error fetching app list: ' + err.response ? err.response.status : err);
+});
