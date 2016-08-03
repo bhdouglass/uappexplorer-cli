@@ -7,22 +7,30 @@ var Table = require('cli-table2');
 var Api = require('../api');
 var sorts = require('../constants/sorts');
 var types = require('../constants/types');
+var pkg = require('../package.json');
 
 var api = new Api();
 
 var argv = parseArgs(process.argv.slice(2), {
     string: ['search', 'app'],
+    boolean: ['help', 'ids', 'version'],
     default: {
         page: 1,
         size: api.DEFAULT_LIMIT,
         //sort: api.DEFAULT_SORT, //Don't set this here so we can detect when it's left undefined
         type: api.DEFAULT_TYPE,
+        ids: false,
+        help: false,
+        version: false,
     },
     alias: {
         search: 's',
         page: 'p',
         size: 'limit',
         app: 'a',
+        ids: 'i',
+        help: 'h',
+        version: 'v',
     }
 });
 
@@ -53,7 +61,37 @@ function listTypes(types) {
     return typeList;
 }
 
-if (argv.app) {
+if (argv.help) {
+    console.log('uappexplorer-cli (v' + pkg.version + ')');
+    console.log('usage: uappexplorer [--search <term>] [--page <page>] [--size <size>] [--sort <sort>] [--type <type>]');
+    console.log('usage: uappexplorer --app <id>');
+
+    console.log('\nArguments');
+    console.log('  Search');
+    console.log('    -s --search   Search for the specified term(s) (optional)');
+    console.log('    -p --page     What page of the search to show (optional)');
+    console.log('       --size     Limit the size of the page (optional)');
+    console.log('       --sort     Sort the results (ex: title, hearts, -stars, etc) (optional)');
+    console.log('       --type     Filter the results by app type (ex: app, scope, snap, snap_kernel, etc) (optional)');
+    console.log('    -i --ids      Also show the ids of the apps (used for finding more info about an app) (optional)');
+
+    console.log('\n  Apps');
+    console.log('    -a --app      The id for an app to find');
+
+    console.log('\n  Other');
+    console.log('    -h --help     Display this help text');
+    console.log('    -v --version  Display the version');
+
+    console.log('\nExample Usage');
+    console.log('  Search for telegram related apps: uappexplorer --search telegram');
+    console.log('  Find the highest rated scopes: uappexplorer --sort hearts --type scope');
+    console.log('  Find the highest rated scopes (page 2): uappexplorer --sort hearts --type scope --page 2');
+    console.log('  Show detailed info about an app: uappexplorer --app uappexplorer.bhdouglass');
+}
+else if (argv.version) {
+    console.log('uappexplorer-cli (v' + pkg.version + ')');
+}
+else if (argv.app) {
     api.app(argv.app).then(function(res) {
         if (res.data && res.data.data) {
             var app = res.data.data;
@@ -144,8 +182,10 @@ if (argv.app) {
 else {
     //TODO add column for app ID
     var width = process.stdout.columns - 20 - 15 - 6 - 6 - 6; //last 6 is column separators
+    var description = argv.ids ? 'ID' : 'Description';
+
     var table = new Table({
-        head: ['App', 'Description', 'Type', '❤', '★'],
+        head: ['App', description, 'Type', '❤', '★'],
         colWidths: [20, width, 15, 6, 6],
     });
 
@@ -188,7 +228,7 @@ else {
             res.data.data.apps.forEach(function(app) {
                 table.push([
                     app.title,
-                    app.short_description,
+                    argv.ids ? app.name : app.short_description,
                     listTypes(app.types),
                     app.points ? app.points : 0,
                     app.bayesian_average ? app.bayesian_average.toFixed(2) : 0,
