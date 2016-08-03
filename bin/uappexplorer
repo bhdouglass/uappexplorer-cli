@@ -11,7 +11,7 @@ var types = require('../constants/types');
 var api = new Api();
 
 var argv = parseArgs(process.argv.slice(2), {
-    string: ['search'],
+    string: ['search', 'app'],
     default: {
         page: 1,
         size: api.DEFAULT_LIMIT,
@@ -22,11 +22,12 @@ var argv = parseArgs(process.argv.slice(2), {
         search: 's',
         page: 'p',
         size: 'limit',
+        app: 'a',
     }
 });
 
 //TODO move to another file
-var colors = {
+var typeColors = {
     application: colors.blue('App'),
     scope: colors.yellow('Scope'),
     webapp: colors.cyan('Web App'),
@@ -39,78 +40,173 @@ var colors = {
     snappy_application: colors.magenta('Snap'),
 };
 
-var width = process.stdout.columns - 20 - 15 - 6 - 6 - 6; //last 6 is column separators
-var table = new Table({
-    head: ['App', 'Description', 'Type', '❤', '★'],
-    colWidths: [20, width, 15, 6, 6],
-});
+function listTypes(types) {
+    var typeList = '';
+    types.forEach(function(type, index) {
+        if (index > 0) {
+            typeList += ', ';
+        }
 
-var skip = (argv.page - 1) * argv.size;
-var sort = api.DEFAULT_SORT;
-var type = api.DEFAULT_TYPE;
+        typeList += typeColors[type];
+    });
 
-if (!argv.search) {
-    //If no search default to sort by newest, like the website
-    sort = 'published_date';
+    return typeList;
 }
 
-if (sorts.sorts.indexOf(argv.sort) > -1) {
-    sort = argv.sort;
-}
-else if (sorts.alias[argv.sort]) {
-    sort = sorts.alias[argv.sort];
-}
+if (argv.app) {
+    api.app(argv.app).then(function(res) {
+        if (res.data && res.data.data) {
+            var app = res.data.data;
+            console.log(colors.underline(app.title) + ' ' + listTypes(app.types));
 
-//Reverse the sort, as it would be expeted that a - means sort from top to bottom
-if (sort != 'relevance') {
-    if (sort.substring(0, 1) == '-') {
-        sort = sort.substring(1);
-    }
-    else {
-        sort = '-' + sort;
-    }
-}
+            var stars = app.bayesian_average ? app.bayesian_average.toFixed(2) : 0;
+            var hearts = app.points ? app.points : 0;
+            console.log(colors.red(hearts + '❤ ') + colors.yellow(stars + '★'));
 
-if (types.types.indexOf(argv.type) > -1) {
-    type = argv.type;
-}
-else if (types.alias[argv.type]) {
-    type = types.alias[argv.type];
-}
+            if (app.prices) {
+                var prices = '';
 
-var query = {types: type};
-api.search(argv.search, skip, argv.size, sort, true, query).then(function(res) {
-    if (res.data && res.data.data && res.data.data.apps) {
-        res.data.data.apps.forEach(function(app) {
-            var typeList = '';
-            app.types.forEach(function(type, index) {
-                if (index > 0) {
-                    typeList += ', ';
+                for (var currency in app.prices) {
+                    var price = app.prices[currency];
+                    if (price === 0) {
+                        prices = 'Free';
+                    }
+                    else {
+                        if (currency == 'USD') {
+                            prices += '$' + price + ' ';
+                        }
+                        else if (currency == 'GBP') {
+                            prices += '£' + price + ' ';
+                        }
+                        else if (currency == 'EUR') {
+                            prices += '€' + price + ' ';
+                        }
+                        else {
+                            prices += currency + ' ' + price + ' ';
+                        }
+                    }
                 }
 
-                typeList += colors[type];
-            });
+                console.log(colors.green(prices));
+            }
+            else {
+                console.log(colors.green('Free'));
+            }
 
-            table.push([
-                app.title,
-                app.short_description,
-                typeList,
-                app.points ? app.points : 0,
-                app.bayesian_average ? app.bayesian_average.toFixed(2) : 0,
-            ]);
-        });
+            if (app.author) {
+                console.log('Author: ' + app.author);
+            }
 
-        console.log(table.toString());
+            if (app.company) {
+                console.log('Company: ' + app.company);
+            }
 
-        if (argv.size < res.data.data.count) {
-            var pages = Math.ceil(res.data.data.count / argv.size);
-            console.log('Page ' + argv.page + ' of ' + pages);
+            console.log('\n' + app.description);
+
+            if (app.changelog) {
+                console.log('\nChangelog:\n' + app.changelog + '\n');
+            }
+
+            if (app.permissions) {
+                var permissions = app.permissions.join(', ');
+                permissions = permissions.replace(/_/g, ' ').replace(/-/g, ' ').replace(/\w\S*/g, function(txt) {
+                    return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase(); //To title Case
+                });
+
+                console.log('Permissions: ' + permissions);
+            }
+
+            if (app.support) {
+                console.log('Support: ' + app.support);
+            }
+
+            if (app.website) {
+                console.log('Website: ' + app.website);
+            }
+
+            console.log('Version: ' + app.version);
+            console.log('License: ' + app.license);
+            console.log('Architectures: ' + app.architecture.join(', '));
+        }
+        else {
+            console.warn('No app was found');
+        }
+    }).catch(function(err) {
+        if (err.response && err.response.status == 404) {
+            console.warn('App not found');
+        }
+        else {
+            var message = err.response ? err.response.status : err;
+            console.warn('Error fetching app: ' + message);
+        }
+    });
+}
+else {
+    //TODO add column for app ID
+    var width = process.stdout.columns - 20 - 15 - 6 - 6 - 6; //last 6 is column separators
+    var table = new Table({
+        head: ['App', 'Description', 'Type', '❤', '★'],
+        colWidths: [20, width, 15, 6, 6],
+    });
+
+    var skip = (argv.page - 1) * argv.size;
+    var sort = api.DEFAULT_SORT;
+    var type = api.DEFAULT_TYPE;
+
+    if (!argv.search) {
+        //If no search default to sort by newest, like the website
+        sort = 'published_date';
+    }
+
+    if (sorts.sorts.indexOf(argv.sort) > -1) {
+        sort = argv.sort;
+    }
+    else if (sorts.alias[argv.sort]) {
+        sort = sorts.alias[argv.sort];
+    }
+
+    //Reverse the sort, as it would be expeted that a - means sort from top to bottom
+    if (sort != 'relevance') {
+        if (sort.substring(0, 1) == '-') {
+            sort = sort.substring(1);
+        }
+        else {
+            sort = '-' + sort;
         }
     }
-    else {
-        console.log('No apps found');
+
+    if (types.types.indexOf(argv.type) > -1) {
+        type = argv.type;
     }
-}).catch(function(err) {
-    var message = err.response ? err.response.status : err;
-    console.log('Error fetching app list: ' + message);
-});
+    else if (types.alias[argv.type]) {
+        type = types.alias[argv.type];
+    }
+
+    var query = {types: type};
+    api.search(argv.search, skip, argv.size, sort, true, query).then(function(res) {
+        if (res.data && res.data.data && res.data.data.apps) {
+            res.data.data.apps.forEach(function(app) {
+                table.push([
+                    app.title,
+                    app.short_description,
+                    listTypes(app.types),
+                    app.points ? app.points : 0,
+                    app.bayesian_average ? app.bayesian_average.toFixed(2) : 0,
+                ]);
+            });
+
+            console.log(table.toString());
+
+            if (argv.size < res.data.data.count) {
+                var pages = Math.ceil(res.data.data.count / argv.size);
+                console.log('Page ' + argv.page + ' of ' + pages);
+            }
+        }
+        else {
+            console.warn('No apps found');
+        }
+    }).catch(function(err) {
+        var message = err.response ? err.response.status : err;
+        console.warn('Error fetching app list: ' + message);
+    });
+}

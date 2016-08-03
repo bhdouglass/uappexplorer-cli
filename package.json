@@ -32,5 +32,11 @@
     "cli-table2": "^0.2.0",
     "colors": "^1.1.2",
     "minimist": "^1.2.0"
+  },
+  "devDependencies": {
+    "gulp": "^3.9.1",
+    "gulp-jshint": "^2.0.1",
+    "jshint": "^2.9.2",
+    "jshint-stylish": "^2.2.0"
   }
 }

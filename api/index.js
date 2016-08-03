@@ -34,6 +34,10 @@ Api.prototype.search = function(search, skip, limit, sort, mini, query) {
     }
 
     return axios.get(this.url + 'apps', {params: params});
-}
+};
+
+Api.prototype.app = function(id) {
+    return axios.get(this.url + 'apps/' + id);
+};
 
 module.exports = Api;
