@@ -6,6 +6,10 @@ A command line interface for browsing apps and snaps on [uApp Explorer](https://
 
 `npm install -g uappexplorer-cli`
 
+OR as a [snap](https://uappexplorer.com/app/uappexplorer-cli.bhdouglass)
+
+`snap install uappexplorer-cli`
+
 ## Usage
 
 `uappexplorer --search <search term>`

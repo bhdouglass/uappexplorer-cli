@@ -1,0 +1,16 @@
+name: uappexplorer-cli
+version: "1.0.0"
+summary: Browse uApp Explorer right for the command line!
+description: A command line interface for browsing apps and snaps on uApp Explorer (uappexplorer.com)
+confinement: strict
+
+apps:
+  uappexplorer-cli:
+    command: bin/uappexplorer
+    plugs: [network, network-bind]
+
+parts:
+  uappexplorer-cli:
+    plugin: nodejs
+    node-packages:
+      - uappexplorer-cli

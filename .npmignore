@@ -2,3 +2,4 @@ node_modules
 .git*
 .jshintrc
 gulpfile.js
+snapcraft.yaml
