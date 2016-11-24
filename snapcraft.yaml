@@ -1,6 +1,6 @@
 name: uappexplorer-cli
 version: "1.0.0"
-summary: Browse uApp Explorer right for the command line!
+summary: Browse uApp Explorer right from the command line!
 description: A command line interface for browsing apps and snaps on uApp Explorer (uappexplorer.com)
 confinement: strict
 

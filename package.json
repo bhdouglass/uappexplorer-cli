@@ -1,6 +1,6 @@
 {
   "name": "uappexplorer-cli",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A command line interface for browsing apps and snaps on uApp Explorer (uappexplorer.com).",
   "main": "api/index.js",
   "repository": {
@@ -28,15 +28,15 @@
   },
   "homepage": "https://github.com/bhdouglass/uappexplorer-cli#readme",
   "dependencies": {
-    "axios": "^0.13.1",
+    "axios": "^0.15.2",
     "cli-table2": "^0.2.0",
     "colors": "^1.1.2",
     "minimist": "^1.2.0"
   },
   "devDependencies": {
     "gulp": "^3.9.1",
-    "gulp-jshint": "^2.0.1",
-    "jshint": "^2.9.2",
-    "jshint-stylish": "^2.2.0"
+    "gulp-jshint": "^2.0.4",
+    "jshint": "^2.9.4",
+    "jshint-stylish": "^2.2.1"
   }
 }
