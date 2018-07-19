@@ -2,7 +2,7 @@
 
 var parseArgs = require('minimist');
 var colors = require('colors');
-var Table = require('cli-table2');
+var Table = require('cli-table3');
 
 var Api = require('../api');
 var sorts = require('../constants/sorts');
